@@ -5,32 +5,107 @@ import random
 pygame.init()
 clock = pygame.time.Clock()
 
-#Pygame window
+# Game-loop variable
+game_state = "menu"
+game_character = "bird"
+game_difficulty = "easy"
+
+# Pygame window
 window_height = 720
 window_width = 551
 window = pygame.display.set_mode((window_width, window_height))
 
-#load images
+#load bird images
 bird_images = [pygame.image.load("assets/bird_down.png"), pygame.image.load("assets/bird_mid.png"), pygame.image.load("assets/bird_up.png")]
-skyline_image = pygame.image.load("assets/background.png")
+background_bird_image = pygame.image.load("assets/background.png")
 gameover_image = pygame.image.load("assets/game_over.png")
 top_pipe_image = pygame.image.load("assets/pipe_top.png")
 bottom_pipe_image = pygame.image.load("assets/pipe_bottom.png")
 start_image = pygame.image.load("assets/start.png")
-ground_image = pygame.image.load("assets/ground.png")
+ground_bird_image = pygame.image.load("assets/ground.png")
+
+#load pig images
+pig_image = pygame.image.load("assets/pig.png")
+background_pig_easy_image = pygame.image.load("assets/background_pig_easy.png")
+background_pig_medium_image = pygame.image.load("assets/background_pig_medium.png")
+background_pig_hard_image = pygame.image.load("assets/background_pig_hard.png")
+branch_up_image = pygame.image.load("assets/branch_up.png")
+branch_down_image = pygame.image.load("assets/branch_down.png")
+ground_pig_easy_image = pygame.image.load("assets/ground_pig_easy.png")
+ground_pig_medium_image = pygame.image.load("assets/ground_pig_medium.png")
+ground_pig_hard_image = pygame.image.load("assets/ground_pig_hard.png")
+pig_image = pygame.image.load("assets/pig.png")
+tower1_down_image = pygame.image.load("assets/tower1_down.png")
+tower1_up_image = pygame.image.load("assets/tower1_up.png")
+tower2_down_image = pygame.image.load("assets/tower2_down.png")
+tower2_up_image = pygame.image.load("assets/tower2_up.png")
+tower3_down_image = pygame.image.load("assets/tower3_down.png")
+tower3_up_image = pygame.image.load("assets/tower3_up.png")
+tower4_down_image = pygame.image.load("assets/tower4_down.png")
+tower4_up_image = pygame.image.load("assets/tower4_up.png")
+tower5_down_image = pygame.image.load("assets/tower5_down.png")
+tower5_up_image = pygame.image.load("assets/tower5_up.png")
+tower6_down_image = pygame.image.load("assets/tower6_down.png")
+tower6_up_image = pygame.image.load("assets/tower6_up.png")
+tower7_down_image = pygame.image.load("assets/tower7_down.png")
+tower7_up_image = pygame.image.load("assets/tower7_up.png")
+tower8_down_image = pygame.image.load("assets/tower8_down.png")
+tower8_up_image = pygame.image.load("assets/tower8_up.png")
+tower9_down_image = pygame.image.load("assets/tower9_down.png")
+tower9_up_image = pygame.image.load("assets/tower9_up.png")
+tower10_down_image = pygame.image.load("assets/tower10_down.png")
+tower10_up_image = pygame.image.load("assets/tower10_up.png")
+tree_down_image = pygame.image.load("assets/tree_down.png")
+tree_up_image = pygame.image.load("assets/tree_up.png")
+weapon1_down_image = pygame.image.load("assets/weapon1_down.png")
+weapon1_up_image = pygame.image.load("assets/weapon1_up.png")
+weapon2_down_image = pygame.image.load("assets/weapon2_down.png")
+weapon2_up_image = pygame.image.load("assets/weapon2_up.png")
+weapon3_down_image = pygame.image.load("assets/weapon3_down.png")
+weapon3_up_image = pygame.image.load("assets/weapon3_up.png")
+weapon4_down_image = pygame.image.load("assets/weapon4_down.png")
+weapon4_up_image = pygame.image.load("assets/weapon4_up.png")
+weapon5_down_image = pygame.image.load("assets/weapon5_down.png")
+weapon5_up_image = pygame.image.load("assets/weapon5_up.png")
+weapon6_down_image = pygame.image.load("assets/weapon6_down.png")
+weapon6_up_image = pygame.image.load("assets/weapon6_up.png")
+weapon7_down_image = pygame.image.load("assets/weapon7_down.png")
+weapon7_up_image = pygame.image.load("assets/weapon7_up.png")
+weapon8_down_image = pygame.image.load("assets/weapon8_down.png")
+weapon8_up_image = pygame.image.load("assets/weapon8_up.png")
+weapon9_down_image = pygame.image.load("assets/weapon9_down.png")
+weapon9_up_image = pygame.image.load("assets/weapon9_up.png")
+weapon10_down_image = pygame.image.load("assets/weapon10_down.png")
+weapon10_up_image = pygame.image.load("assets/weapon10_up.png")
+wing_down_image = pygame.image.load("assets/wing_down.png")
+wing_up_image = pygame.image.load("assets/wing_up.png")
+wing_middle_image = pygame.image.load("assets/wing_medium.png")
+
+# Scale variables
+pig_image = pig_image.convert_alpha() # This preserves the transparency of the PNG and optimizes the image for fast rendering with transparency.
+pig_image = pygame.transform.scale(pig_image, (pig_image.get_width() // 25, pig_image.get_height() // 25))
+wing_down_image = wing_down_image.convert_alpha()
+wing_down_image = pygame.transform.scale(wing_down_image, (wing_down_image.get_width() // 8, wing_down_image.get_height() // 8))
+wing_middle_image = wing_middle_image.convert_alpha()
+wing_medium_image = pygame.transform.scale(wing_middle_image, (wing_middle_image.get_width() // 8, wing_middle_image.get_height() // 8))
+wing_up_image = wing_up_image.convert_alpha()
+wing_up_image = pygame.transform.scale(wing_up_image, (wing_up_image.get_width() // 8, wing_up_image.get_height() // 8))
+
 
 # Game variables
 gameSpeed = 1
-bird_start_position = (100, 250)
+character_start_position = (100, 250)
 score = 0
+character_images = bird_images
+ground_image = ground_bird_image
+background_image = background_bird_image
 
-
-class Bird (pygame.sprite.Sprite):
+class Character (pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = bird_images[0]
+        self.image = character_images[0]
         self.rect = self.image.get_rect()
-        self.rect.center = bird_start_position
+        self.rect.center = character_start_position
         self.image_index = 0
         self.velocity = 0
         self.can_flap = True
@@ -41,17 +116,15 @@ class Bird (pygame.sprite.Sprite):
             self.image_index += 1
         if self.image_index >= 30:
             self.image_index = 0
-        self.image = bird_images[self.image_index // 10] # Bird changes image every 10 units of time
+        self.image = character_images[self.image_index // 10] # Bird changes image every 10 units of time
 
         # Gravity and flap
-        self.velocity += 0.5
+        self.velocity += 0.5 # Gravity acceleration rate
         if self.velocity > 7:
-            self.velocity = 7
-        if self.rect.y < 500:
+            self.velocity = 7 # Max fall speed
+        if self.rect.y < 500: # Make sure bird above ground
             self.rect.y += self.velocity
-
-
-        if self.velocity == 0:
+        if self.velocity == 0: # Can only flap after bird reaches highest point from previous flap
             self.can_flap = True
 
 
@@ -80,8 +153,8 @@ class Pipe(pygame.sprite.Sprite):
             self.kill()
         # Score
         global score
-        if self.pipe_type == 'bottom':
-            if bird_start_position[0] > self.rect.topright[0] and not self.passed_pipe:
+        if self.pipe_type == 'bottom': # Updating score based on if bird has passed the bottom pipe
+            if character_start_position[0] > self.rect.topright[0] and not self.passed_pipe:
                 self.passed_pipe = True
                 score += 1
 
@@ -100,7 +173,10 @@ class Ground(pygame.sprite.Sprite):
         if self.rect.x <= -window_width:
             self.kill()
 
-
+def add_wings(character_image, wing_image, position = (0,0)):
+    combined_image = character_image.copy() # Blitting alters the original copy so a new copy is needed
+    combined_image.blit(wing_image, position)
+    return combined_image
 
 
 def quit_game():
@@ -110,78 +186,134 @@ def quit_game():
             exit()
 
 # Game method:
-def flappy_bird():
+def run_game(character_type, difficulty):
+    global game_state
+    global game_character
+    global game_difficulty
     global score
     global gameSpeed
-
-    # Create bird
-    bird = pygame.sprite.GroupSingle()
-    bird.add(Bird())
-
-    # Create pipes
-    pipe_timer = 0
-    pipes = pygame.sprite.Group()
-
-    # Create ground
-    x_ground_postion, y_ground_postion = 0, 520
-    ground = pygame.sprite.Group()
-    ground.add(Ground(x_ground_postion, y_ground_postion))
-
-    run = True
-    while run:
-        quit_game()  # Ends program when user closes out window
-
-        # Reset frame to black
+    global character_images
+    global ground_image
+    global background_image
+    while True:
+        quit_game()  # Ends program when user closes out window, essential for processing user inputs.
         window.fill((0, 0, 0))
+        if character_type == 'bird': # Draw flappy bird start screen
+            ground_image =  ground_bird_image
 
-        # User input
+        elif character_type == 'pig':
+            if difficulty == 'easy':
+                ground_image = ground_pig_easy_image
+                background_image = background_pig_easy_image
+            elif difficulty == 'medium':
+                ground_image = ground_pig_medium_image
+                background_image = background_pig_medium_image
+            elif difficulty == 'hard':
+                ground_image = ground_pig_hard_image
+                background_image = background_pig_hard_image
+            character_images = pig_images
+
+
+        window.blit(ground_image, (0, 520))
+        window.blit(background_image, (0, 0))
+        window.blit(character_images[0], (100, 250))
+        window.blit(start_image, (
+        window_width // 2 - start_image.get_width() // 2, window_height // 2 - start_image.get_height() // 2))
+
+        pygame.display.update()
         user_input = pygame.key.get_pressed()
 
-        # Spawn ground on right side
-        if(len(ground)) < 2:
-            ground.add(Ground(window_width, y_ground_postion))
+        if user_input[pygame.K_SPACE]:
+            # Create bird
+            bird = pygame.sprite.GroupSingle()
+            bird.add(Character())
 
-        # Draw background
-        window.blit(skyline_image, (0, 0))
+            # Create pipes
+            pipe_timer = 0
+            pipes = pygame.sprite.Group()
 
-        # Draw and update pipes, bird, ground
-        pipes.draw(window)
-        ground.draw(window)
-        bird.draw(window)
+            # Create ground
+            x_ground_position, y_ground_position = 0, 520
+            ground = pygame.sprite.Group()
+            ground.add(Ground(x_ground_position, y_ground_position))
 
-        if bird.sprite.alive:
-            pipes.update()
-            ground.update()
-        bird.update(user_input)
 
-        # Detect collision with pipes
-        ground_collision = pygame.sprite.spritecollide(bird.sprites()[0], ground, False)
-        pipe_collision = pygame.sprite.spritecollide(bird.sprites()[0], pipes, False)
-        if ground_collision or pipe_collision:
-            bird.sprite.alive = False
-            if ground_collision:
-                window.blit(gameover_image, (window_width//2 - gameover_image.get_width()//2, window_height//2 - gameover_image.get_height()//2))
-                if user_input[pygame.K_r]:
-                    score = 0
-                    gameSpeed = 1
-                    break
-        # Display score
-        score_text_font = pygame.font.SysFont("Segoe", 26)
-        score_text = score_text_font.render("Score: " + str(score), True, (255, 255, 255))
-        window.blit(score_text, (20, 20))
+            # Start game
+            while True:
+                quit_game()  # Ends program when user closes out window, essential for processing user inputs.
 
-        # Spawn pipes
-        if pipe_timer <= 0 and bird.sprite.alive:
-            x_top, x_bottom = 550, 550
-            y_top = random.randint (-600, -480) # Negative because pipe is created above the screen. Y increases as you move down
-            y_bottom = y_top + random.randint (90, 130) + bottom_pipe_image.get_height()
-            pipes.add(Pipe(x_top, y_top, top_pipe_image, 'top'))
-            pipes.add(Pipe(x_bottom, y_bottom, bottom_pipe_image, 'bottom'))
-            pipe_timer = random.randint (180, 250)
-        pipe_timer -= 1
+                # Reset frame to black
+                window.fill((0, 0, 0))
 
-        clock.tick(60)
-        pygame.display.update()
+                # User input
+                user_input = pygame.key.get_pressed()  # Redefined inside loop to constantly recheck for user input
+
+                # Spawn ground on right side
+                if (len(ground)) < 2:
+                    ground.add(Ground(window_width, y_ground_position))
+
+                # Draw background
+                window.blit(background_image, (0, 0))
+
+                # Draw and update pipes, bird, ground
+                pipes.draw(window)
+                ground.draw(window)
+                bird.draw(window)
+
+                if bird.sprite.alive:
+                    pipes.update()
+                    ground.update()
+                bird.update(user_input)
+
+                # Detect collision with pipes
+                ground_collision = pygame.sprite.spritecollide(bird.sprites()[0], ground, False)
+                pipe_collision = pygame.sprite.spritecollide(bird.sprites()[0], pipes, False)
+                if ground_collision or pipe_collision:
+                    bird.sprite.alive = False
+                    if ground_collision:
+                        window.blit(gameover_image, (window_width // 2 - gameover_image.get_width() // 2,
+                                                     window_height // 2 - gameover_image.get_height() // 2))
+                        if user_input[pygame.K_m]:
+                            score = 0
+                            gameSpeed = 1
+                            game_state = "menu"
+                            return
+
+                        elif user_input[pygame.K_r]:
+                            score = 0
+                            gameSpeed = 1
+                            game_character = character_type
+                            game_difficulty = difficulty
+                            game_state = "run_game"
+                            return
+
+                # Display score
+                score_text_font = pygame.font.SysFont("Segoe", 26)
+                score_text = score_text_font.render("Score: " + str(score), True, (255, 255, 255))
+                window.blit(score_text, (20, 20))
+
+                # Spawn pipes
+                if pipe_timer <= 0 and bird.sprite.alive:
+                    x_top, x_bottom = 550, 550
+                    y_top = random.randint(-600,
+                                           -480)  # Negative because pipe is created above the screen. Y increases as you move down
+                    y_bottom = y_top + random.randint(90, 130) + bottom_pipe_image.get_height()
+                    pipes.add(Pipe(x_top, y_top, top_pipe_image, 'top'))
+                    pipes.add(Pipe(x_bottom, y_bottom, bottom_pipe_image, 'bottom'))
+                    pipe_timer = random.randint(180, 250)
+                pipe_timer -= 1
+
+                clock.tick(60)
+                pygame.display.update()
+
+
+
+
+
+
+
+
+
 
 
 
@@ -189,21 +321,50 @@ def flappy_bird():
 # Menu
 def menu():
 
+    global game_character
+    global game_difficulty
+    global game_state
+
+    mouse_position = pygame.mouse.get_pos()
+    mouse_click = pygame.mouse.get_pressed()
+
     while True:
-        quit_game()  # Ends program when user closes out window
+        quit_game()  # Ends program when user closes out window, essential for processing user inputs.
 
         # Draw menu
         window.fill((0, 0, 0))
         window.blit(ground_image, (0, 520))
-        window.blit(skyline_image, (0, 0))
-        window.blit(bird_images[0], (100, 250))
+        window.blit(background_pig_medium_image, (0, 0))
+        window.blit(character_images[0], (10, 250))
         window.blit(start_image, (window_width//2 - start_image.get_width()//2, window_height//2 - start_image.get_height()//2))
+        pygame.display.update()
 
         # Start game
         user_input = pygame.key.get_pressed()
         if user_input[pygame.K_SPACE]:
-            flappy_bird()
-        pygame.display.update()
+            game_difficulty = 'hard'
+            game_character = 'pig'
+            game_state = 'run_game'
+            return
 
-menu()
+
+
+# Add wings to pig
+pig_down_image = add_wings(pig_image, wing_down_image, position = (-17,-5))
+pig_middle_image = add_wings(pig_image, wing_middle_image, position = (-17,-5))
+pig_up_image = add_wings(pig_image, wing_up_image, position = (-17,-5))
+
+pig_images = [pig_down_image, pig_middle_image, pig_up_image]
+
+# Game loop to prevent stack overflow from nested functions
+while True:
+    quit_game()
+
+    if game_state == 'menu':
+        menu()
+    elif game_state == 'run_game':
+        run_game(game_character, game_difficulty)
+
+
+
 
