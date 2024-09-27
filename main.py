@@ -9,7 +9,21 @@ class Character (pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.image = character_images[0]
-        self.rect = self.image.get_rect()
+
+        # Mask for better accuracy collision tracking, only gets visible pixels
+        self.mask = pygame.mask.from_surface(self.image)
+        outline = self.mask.outline()
+        if outline:
+            min_x = min([point[0] for point in outline])
+            max_x = max([point[0] for point in outline])
+            min_y = min([point[1] for point in outline])
+            max_y = max([point[1] for point in outline])
+            self.mask_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
+
+
+        # Makes sure rect is only around the character itself and not invisible png pixels
+        self.rect = self.mask_rect
+
         self.rect.center = character_start_position
         self.image_index = 0
         self.velocity = 0
@@ -35,31 +49,55 @@ class Character (pygame.sprite.Sprite):
 
         # Rotate bird
         self.image = pygame.transform.rotate(self.image, self.velocity * -7)
+        self.rect = self.image.get_rect(center=self.rect.center)
+        self.mask = pygame.mask.from_surface(self.image)
 
         # User flap
         if user_flap_input[pygame.K_SPACE] and self.can_flap and self.rect.y > 0 and self.alive:
             self.can_flap = False
             self.velocity = -7
 
+
+
 class Pipe(pygame.sprite.Sprite):
     def __init__(self, x, y, image, pipe_type):
         pygame.sprite.Sprite.__init__(self)
         self.image = image
-        self.rect = self.image.get_rect()
+
+
+
+        # Mask for better accuracy collision tracking
+        self.mask = pygame.mask.from_surface(self.image)
+
+        outline = self.mask.outline()
+        if outline:
+            min_x = min([point[0] for point in outline])
+            max_x = max([point[0] for point in outline])
+            min_y = min([point[1] for point in outline])
+            max_y = max([point[1] for point in outline])
+            self.mask_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
+
+
+        # Makes sure rect is only around the obstacle itself and not invisible png pixels
+        self.rect = self.mask_rect.copy()
+
         self.rect.x = x
         self.rect.y = y
+
+
         self.passed_pipe = False
         self.pipe_type = pipe_type
 
     def update(self):
         # Move pipe
-        self.rect.x -= gameSpeed
+        self.rect.x -= game_speed
         if self.rect.x < - window_width:
             self.kill()
         # Score
         global score
+
         if self.pipe_type == 'bottom': # Updating score based on if bird has passed the bottom pipe
-            if character_start_position[0] > self.rect.topright[0] and not self.passed_pipe:
+            if character_start_position[0] > self.rect.right and not self.passed_pipe:
                 self.passed_pipe = True
                 score += 1
 
@@ -74,7 +112,7 @@ class Ground(pygame.sprite.Sprite):
 
     def update(self):
         # Move ground
-        self.rect.x -= gameSpeed
+        self.rect.x -= game_speed
         if self.rect.x <= -window_width:
             self.kill()
 
@@ -102,7 +140,7 @@ def run_game(character_type, difficulty):
     global game_character
     global game_difficulty
     global score
-    global gameSpeed
+    global game_speed
     global character_images
     global ground_image
     global background_image
@@ -127,8 +165,8 @@ def run_game(character_type, difficulty):
             character_images = pig_images
 
         # Draw start screen
-        window.blit(ground_image, (0, 520))
         window.blit(background_image, (0, 0))
+        window.blit(ground_image, (0, 520))
         window.blit(character_images[0], (100, 250))
         window.blit(start_image, (
         window_width // 2 - start_image.get_width() // 2, window_height // 2 - start_image.get_height() // 2))
@@ -138,8 +176,8 @@ def run_game(character_type, difficulty):
 
         if user_input[pygame.K_SPACE]:
             # Create bird
-            bird = pygame.sprite.GroupSingle()
-            bird.add(Character())
+            character = pygame.sprite.GroupSingle()
+            character.add(Character())
 
             # Create pipes
             pipe_timer = 0
@@ -172,30 +210,30 @@ def run_game(character_type, difficulty):
                 # Draw and update pipes, bird, ground
                 pipes.draw(window)
                 ground.draw(window)
-                bird.draw(window)
+                character.draw(window)
 
-                if bird.sprite.alive:
+                if character.sprite.alive:
                     pipes.update()
                     ground.update()
-                bird.update(user_input)
+                character.update(user_input)
 
                 # Detect collision with pipes
-                ground_collision = pygame.sprite.spritecollide(bird.sprites()[0], ground, False)
-                pipe_collision = pygame.sprite.spritecollide(bird.sprites()[0], pipes, False)
+                ground_collision = pygame.sprite.spritecollide(character.sprites()[0], ground, False, pygame.sprite.collide_mask)
+                pipe_collision = pygame.sprite.spritecollide(character.sprites()[0], pipes, False, pygame.sprite.collide_mask)
                 if ground_collision or pipe_collision:
-                    bird.sprite.alive = False
+                    character.sprite.alive = False
                     if ground_collision:
                         window.blit(gameover_image, (window_width // 2 - gameover_image.get_width() // 2,
                                                      window_height // 2 - gameover_image.get_height() // 2))
                         if user_input[pygame.K_m]:
                             score = 0
-                            gameSpeed = 1
+                            game_speed = 1
                             game_state = "menu"
                             return
 
                         elif user_input[pygame.K_r]:
                             score = 0
-                            gameSpeed = 1
+                            game_speed = 1
                             game_character = character_type
                             game_difficulty = difficulty
                             game_state = "run_game"
@@ -206,14 +244,43 @@ def run_game(character_type, difficulty):
                 score_text = score_text_font.render("Score: " + str(score), True, (255, 255, 255))
                 window.blit(score_text, (20, 20))
 
-                # Spawn pipes
-                if pipe_timer <= 0 and bird.sprite.alive:
-                    x_top, x_bottom = 550, 550
-                    y_top = random.randint(-600,
-                                           -480)  # Negative because pipe is created above the screen. Y increases as you move down
-                    y_bottom = y_top + random.randint(90, 130) + bottom_pipe_image.get_height()
-                    pipes.add(Pipe(x_top, y_top, top_pipe_image, 'top'))
-                    pipes.add(Pipe(x_bottom, y_bottom, bottom_pipe_image, 'bottom'))
+                # Determine Obstacle type
+                top_obstacle_image = top_pipe_image
+                bottom_obstacle_image = bottom_pipe_image
+
+                # For starting position
+                x_offset = 0
+                y_offset = 0
+
+                difficulty_offset = 0
+
+
+                if character_type == 'pig':
+                    y_offset = 450
+                    x_offset = -60
+                    if difficulty == 'easy':
+                        top_obstacle_image = tree_down_images[random.randint(0, len(tree_down_images) - 1)]
+                        bottom_obstacle_image = tree_up_images[random.randint(0, len(tree_up_images) - 1)]
+
+                    if difficulty == 'medium':
+                        top_obstacle_image = tower_down_images[random.randint(0, len(tower_down_images) - 1)]
+                        bottom_obstacle_image = tower_up_images[random.randint(0, len(tower_up_images) - 1)]
+
+                    if difficulty == 'hard':
+                        top_obstacle_image = weapon_down_images[random.randint(0, len(weapon_down_images) - 1)]
+                        bottom_obstacle_image = weapon_up_images[random.randint(0, len(weapon_up_images) - 1)]
+
+                if character_type == 'custom':
+                    top_obstacle_image = all_top_obstacles[random.randint(0, len(all_top_obstacles) - 1)]
+                    bottom_obstacle_image = all_bottom_obstacles[random.randint(0, len(all_bottom_obstacles) - 1)]
+
+                # Spawn obstacle
+                if pipe_timer <= 0 and character.sprite.alive:
+                    x_top, x_bottom = 550 + x_offset, 550 + x_offset
+                    y_top = y_offset + random.randint(-600, -480)  # Negative because pipe is created above the screen. Y increases as you move down
+                    y_bottom = y_top + random.randint(100, 150) + bottom_obstacle_image.get_height() - difficulty_offset
+                    pipes.add(Pipe(x_top, y_top, top_obstacle_image, 'top'))
+                    pipes.add(Pipe(x_bottom, y_bottom, bottom_obstacle_image, 'bottom'))
                     pipe_timer = random.randint(180, 250)
                 pipe_timer -= 1
 
@@ -228,7 +295,6 @@ def menu():
     global game_difficulty
     global game_state
     global character_images
-
 
 
     while True:
@@ -246,7 +312,7 @@ def menu():
         window.fill((0, 0, 0))
         window.blit(ground_image, (0, 520))
         window.blit(background_image, (0, 0))
-        window.blit(character_images[0], (10, 250))
+        window.blit(character_images[1], character_start_position)
 
         # Create menu options
         bird_option = font_menu.render("1. Flappy Bird Mode", True, (255, 255, 255))
@@ -280,13 +346,6 @@ def menu():
             if mouse_click:  # Left mouse button click
                 print("this mode has not been made yet")
 
-        # Start game
-        user_input = pygame.key.get_pressed()
-        if user_input[pygame.K_SPACE]:
-            game_difficulty = 'hard'
-            game_character = 'pig'
-            game_state = 'run_game'
-            return
 
 # Difficulty selection screen
 def select_difficulty():
@@ -409,26 +468,59 @@ wing_down_image = pygame.image.load("assets/wing_down.png")
 wing_up_image = pygame.image.load("assets/wing_up.png")
 wing_middle_image = pygame.image.load("assets/wing_medium.png")
 
+# Group obstacles
+tree_up_images = [tree_up_image, branch_up_image]
+tree_down_images = [tree_down_image, branch_down_image]
+tower_up_images = [tower1_up_image, tower2_up_image, tower3_up_image, tower4_up_image, tower5_up_image, tower6_up_image, tower7_up_image, tower8_up_image, tower9_up_image, tower10_up_image]
+tower_down_images = [tower1_down_image, tower2_down_image, tower3_down_image, tower4_down_image, tower5_down_image, tower6_down_image, tower7_down_image, tower8_down_image, tower9_down_image, tower10_down_image]
+weapon_up_images = [weapon1_up_image, weapon2_up_image, weapon3_up_image, weapon4_up_image, weapon5_up_image, weapon6_up_image, weapon7_up_image, weapon8_up_image, weapon9_up_image, weapon10_up_image]
+weapon_down_images = [weapon1_down_image, weapon2_down_image, weapon3_down_image, weapon4_down_image, weapon5_down_image, weapon6_down_image, weapon7_down_image, weapon8_down_image, weapon9_down_image, weapon10_down_image]
+all_bottom_obstacles = [top_pipe_image]+ tree_up_images+ tower_up_images + weapon_up_images
+all_top_obstacles = [bottom_pipe_image] + tree_down_images + tower_down_images + weapon_down_images
+
 # Scale variables
 pig_image = pig_image.convert_alpha() # This preserves the transparency of the PNG and optimizes the image for fast rendering with transparency.
 pig_image = pygame.transform.scale(pig_image, (pig_image.get_width() // 25, pig_image.get_height() // 25))
 wing_down_image = wing_down_image.convert_alpha()
 wing_down_image = pygame.transform.scale(wing_down_image, (wing_down_image.get_width() // 8, wing_down_image.get_height() // 8))
 wing_middle_image = wing_middle_image.convert_alpha()
-wing_medium_image = pygame.transform.scale(wing_middle_image, (wing_middle_image.get_width() // 8, wing_middle_image.get_height() // 8))
+wing_middle_image = pygame.transform.scale(wing_middle_image, (wing_middle_image.get_width() // 8, wing_middle_image.get_height() // 8))
 wing_up_image = wing_up_image.convert_alpha()
 wing_up_image = pygame.transform.scale(wing_up_image, (wing_up_image.get_width() // 8, wing_up_image.get_height() // 8))
+for i in range(0, len(tower_up_images)):
+    tower_up_images[i] = tower_up_images[i].convert_alpha()
+    tower_up_images[i] = pygame.transform.scale(tower_up_images[i], (tower_up_images[i].get_width() // 1.75, tower_up_images[i].get_height() //1.75 ))
+for i in range(0, len(tower_down_images)):
+    tower_down_images[i] = tower_down_images[i].convert_alpha()
+    tower_down_images[i] = pygame.transform.scale(tower_down_images[i], (tower_down_images[i].get_width() // 1.75, tower_down_images[i].get_height()//1.75 ))
+for i in range(0, len(weapon_up_images)):
+        weapon_up_images[i] = weapon_up_images[i].convert_alpha()
+        weapon_up_images[i] = pygame.transform.scale(weapon_up_images[i], (
+        weapon_up_images[i].get_width() // 1.75, weapon_up_images[i].get_height() // 1.75))
+for i in range(0, len(weapon_down_images)):
+        weapon_down_images[i] = weapon_down_images[i].convert_alpha()
+        weapon_down_images[i] = pygame.transform.scale(weapon_down_images[i], (
+        weapon_down_images[i].get_width() // 1.75, weapon_down_images[i].get_height() // 1.75))
+for i in range(0, len(tree_down_images)):
+        tree_down_images[i] = tree_down_images[i].convert_alpha()
+        tree_down_images[i] = pygame.transform.scale(tree_down_images[i], (
+        tree_down_images[i].get_width() // 1.75, tree_down_images[i].get_height() // 1.75))
+for i in range(0, len(tree_up_images)):
+        tree_up_images[i] = tree_up_images[i].convert_alpha()
+        tree_up_images[i] = pygame.transform.scale(tree_up_images[i], (
+        tree_up_images[i].get_width() // 1.75, tree_up_images[i].get_height() // 1.75))
+
 
 
 # Add wings to pig
-pig_down_image = add_wings(pig_image, wing_down_image, position = (-17,-5))
-pig_middle_image = add_wings(pig_image, wing_middle_image, position = (-17,-5))
-pig_up_image = add_wings(pig_image, wing_up_image, position = (-17,-5))
+pig_down_image = add_wings(pig_image, wing_down_image, position = (-18,-4))
+pig_middle_image = add_wings(pig_image, wing_middle_image, position = (-14,8))
+pig_up_image = add_wings(pig_image, wing_up_image, position = (-18,-6))
 
 pig_images = [pig_down_image, pig_middle_image, pig_up_image]
 
 # Game variables
-gameSpeed = 1
+game_speed = 1
 character_start_position = (100, 250)
 score = 0
 character_images = pig_images
