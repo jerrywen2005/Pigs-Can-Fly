@@ -21,8 +21,8 @@ class Character (pygame.sprite.Sprite):
             self.mask_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
 
 
-        # Makes sure rect is only around the character itself and not invisible png pixels
-        self.rect = self.mask_rect
+
+        self.rect = self.image.get_rect()
 
         self.rect.center = character_start_position
         self.image_index = 0
@@ -68,6 +68,7 @@ class Pipe(pygame.sprite.Sprite):
 
         # Mask for better accuracy collision tracking
         self.mask = pygame.mask.from_surface(self.image)
+        self.mask_rect = self.image.get_rect()
 
         outline = self.mask.outline()
         if outline:
@@ -78,9 +79,7 @@ class Pipe(pygame.sprite.Sprite):
             self.mask_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
 
 
-        # Makes sure rect is only around the obstacle itself and not invisible png pixels
-        self.rect = self.mask_rect.copy()
-
+        self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
 
@@ -97,7 +96,8 @@ class Pipe(pygame.sprite.Sprite):
         global score
 
         if self.pipe_type == 'bottom': # Updating score based on if bird has passed the bottom pipe
-            if character_start_position[0] > self.rect.right and not self.passed_pipe:
+            # Rect gets top left coordinate of the whole image, mask_rect gets the distance to the right-most part of the obstacle
+            if character_start_position[0] > (self.rect.x + self.mask_rect.x ) and not self.passed_pipe:
                 self.passed_pipe = True
                 score += 1
 
